@@ -76,29 +76,75 @@ contract NFinTech is IERC721 {
 
     function setApprovalForAll(address operator, bool approved) external {
         // TODO: please add your implementaiton here
+	require(msg.sender != address(0), "Zero Address");
+	_operatorApproval[msg.sender][operator] = approved;
+    emit ApprovalForAll(msg.sender, operator, approved);
     }
 
     function isApprovedForAll(address owner, address operator) public view returns (bool) {
         // TODO: please add your implementaiton here
+	require( owner != address(0), "Zero Address");
+	return _operatorApproval[owner][operator] && owner !=operator;
     }
 
     function approve(address to, uint256 tokenId) external {
         // TODO: please add your implementaiton here
+	/*address owner = ownerOf(tokenId);
+    require(msg.sender == owner || isApprovedForAll(owner, msg.sender), "Not authorized");
+    _tokenApproval[tokenId] = to;
+    emit Approval(owner, to, tokenId);*/
+    require(_owner[tokenId] != address(0), "Token does not exist");
+    require(_owner[tokenId] == msg.sender, "Not token owner");
+    _tokenApproval[tokenId] = to;
+    emit Approval(msg.sender, to, tokenId);
     }
 
     function getApproved(uint256 tokenId) public view returns (address operator) {
         // TODO: please add your implementaiton here
+	return _tokenApproval[tokenId];
     }
 
     function transferFrom(address from, address to, uint256 tokenId) public {
         // TODO: please add your implementaiton here
+	require(ownerOf(tokenId) == from, "Incorrect owner");
+    require(msg.sender == from || isApprovedForAll(from, msg.sender) || getApproved(tokenId) == msg.sender, "Not authorized");
+
+    _balances[from] -= 1;
+    _balances[to] += 1;
+    _owner[tokenId] = to;
+    _tokenApproval[tokenId] = address(0); // Clear approval after transfer
+
+    emit Transfer(from, to, tokenId);
+
+    // Handle safe transfer functionality (optional)
+    /*if (isContract(to)) {
+      bytes4 response = IERC721TokenReceiver(to).onERC721Received(msg.sender, from, tokenId, "");
+      require(response == bytes4(keccak256("onERC721Received(address,address,uint256,bytes)")), "NFT not received");
+    }*/
     }
 
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) public {
         // TODO: please add your implementaiton here
-    }
+	transferFrom(from, to, tokenId);
+	require(_checkOnERC721Received(from, to, tokenId, data), "Receiver not compatible");
+}
 
     function safeTransferFrom(address from, address to, uint256 tokenId) public {
         // TODO: please add your implementaiton here
+	//safeTransferFrom(from, to, tokenId, "");
     }
+
+    function isContract(address addr) private view returns (bool) {
+    uint256 size;
+    assembly { size := extcodesize(addr) }
+    return size > 0;
+  }
+    function _checkOnERC721Received(address from, address to, uint256 tokenId, bytes calldata data) private returns (bool) {
+  try IERC721TokenReceiver(to).onERC721Received(msg.sender, from, tokenId, data) returns (bytes4 response) {
+    return response == type(IERC721TokenReceiver).interfaceId;
+  } catch (bytes memory reason) {
+    // Handle revert reason here (optional)
+    return false;
+  }
+}
 }
