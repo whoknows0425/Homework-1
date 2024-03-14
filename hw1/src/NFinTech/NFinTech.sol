@@ -116,9 +116,75 @@ contract NFinTech is IERC721 {
         require(owner != address(0), "ERROR: Token is not minted or is burn");
         return _tokenApproval[tokenId];
     }
+
     function transferFrom(address from, address to, uint256 tokenId) public {
         // TODO: please add your implementaiton here
-	_transfer(from, to, tokenId);
+	if (to == address(0)) {
+            revert ZeroAddress();
+        }
+        address previousOwner = _update(to, tokenId, msg.sender);
+        if (previousOwner != from) {
+            revert ZeroAddress();
+        }
+
+	//_transfer(from, to, tokenId);
+    }
+
+    function _update(address to, uint256 tokenId, address auth) internal virtual returns (address) {
+        address from = ownerOf(tokenId);
+
+        // Perform (optional) operator check
+        /*if (auth != address(0)) {
+            _checkAuthorized(from, auth, tokenId);
+        }*/
+
+        // Execute the update
+        if (from != address(0)) {
+            // Clear approval. No need to re-authorize or emit the Approval event
+            _approve(address(0), tokenId, address(0), false);
+
+            unchecked {
+                _balances[from] -= 1;
+            }
+        }
+
+        if (to != address(0)) {
+            unchecked {
+                _balances[to] += 1;
+            }
+        }
+
+        _owner[tokenId] = to;
+
+        emit Transfer(from, to, tokenId);
+
+        return from;
+    }
+
+    function _approve(address to, uint256 tokenId, address auth, bool emitEvent) internal virtual {
+        // Avoid reading the owner unless necessary
+        if (emitEvent || auth != address(0)) {
+            address owner = _requireOwned(tokenId);
+
+            // We do not use _isAuthorized because single-token approvals should not be able to call approve
+            if (auth != address(0) && owner != auth && !isApprovedForAll(owner, auth)) {
+                revert ZeroAddress();
+            }
+
+            if (emitEvent) {
+                emit Approval(owner, to, tokenId);
+            }
+        }
+
+        _tokenApproval[tokenId] = to;
+    }
+
+    function _requireOwned(uint256 tokenId) internal view returns (address) {
+        address owner = ownerOf(tokenId);
+        if (owner == address(0)) {
+            revert ZeroAddress();
+        }
+        return owner;
     }
 
     function _transfer(address from, address to, uint256 tokenId) internal {
