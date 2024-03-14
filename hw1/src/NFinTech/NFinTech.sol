@@ -198,15 +198,16 @@ contract NFinTech is IERC721 {
         emit Transfer(from, to, tokenId);
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes calldata data) public {
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public {
         // TODO: please add your implementaiton here
 	transferFrom(from, to, tokenId);
-	require(_checkOnERC721Received(from, to, tokenId, data), "Receiver not compatible");
+	checkOnERC721Received(msg.sender, from, to, tokenId, data);
+	//require(_checkOnERC721Received(from, to, tokenId, data), "Receiver not compatible");
 }
 
     function safeTransferFrom(address from, address to, uint256 tokenId) public {
         // TODO: please add your implementaiton here
-	transferFrom(from, to, tokenId);
+	safeTransferFrom(from, to, tokenId, "");
 	//require(_checkOnERC721Received(from, to, tokenId, ""), "ERROR: ERC721Receiver is not implmeneted");
     }
 
@@ -223,4 +224,32 @@ contract NFinTech is IERC721 {
     return false;
   }
 }
+
+    function checkOnERC721Received(
+        address operator,
+        address from,
+        address to,
+        uint256 tokenId,
+        bytes memory data
+    ) internal {
+        if (to.code.length > 0) {
+            try IERC721TokenReceiver(to).onERC721Received(operator, from, tokenId, data) returns (bytes4 retval) {
+                if (retval != IERC721TokenReceiver.onERC721Received.selector) {
+                    // Token rejected
+                    revert ZeroAddress();
+                }
+            } catch (bytes memory reason) {
+                if (reason.length == 0) {
+                    // non-IERC721TokenReceiver implementer
+                    revert ZeroAddress();
+                } else {
+                    /// @solidity memory-safe-assembly
+                    assembly {
+                        revert(add(32, reason), mload(reason))
+                    }
+                }
+            }
+        }
+    }
+
 }
