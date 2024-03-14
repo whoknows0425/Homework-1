@@ -13,9 +13,6 @@ contract StudentV1 {
 	else
 		return 123;
     }
-    function updateID(uint256 newID) external {
-    id = 123;
-  }
 }
 
 /* Problem 2 Interface & Contract */
@@ -23,15 +20,20 @@ interface IClassroomV2 {
     function isEnrolled() external view returns (bool);
 }
 
-contract StudentV2 {
-	bool public enrolled = false;
+contract StudentV2 is IClassroomV2{
+	bool public isEnrolled;
+	uint256 private id=0;
+	//function isEnrolled() external view returns (bool);
+    function fix(uint256 id) internal pure returns(uint256){
+	if(IClassroomV2.isEnrolled())
+		return 123;
+	else
+		return 1001;	
+	}
     function register() external view returns (uint256) {
         // TODO: please add your implementaiton here
-	return 0;
+	return fix(id);
     }
-    function setIsEnrolled(IClassroomV2 classroom) public {
-    enrolled = classroom.isEnrolled(); // Call ClassroomV2's function to check enrollment
-  }
 }
 
 /* Problem 3 Interface & Contract */
