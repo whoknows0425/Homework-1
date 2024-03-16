@@ -24,15 +24,15 @@ contract StudentV2 is IClassroomV2{
 	bool public isEnrolled;
 	uint256 private id=0;
 	//function isEnrolled() external view returns (bool);
-    function fix(uint256 id) internal pure returns(uint256){
+    /*function fix(uint256 id, IClassroomV2 classroom) internal pure returns(uint256){
 	if(IClassroomV2.isEnrolled())
 		return 123;
 	else
 		return 1001;	
-	}
+	}*/
     function register() external view returns (uint256) {
         // TODO: please add your implementaiton here
-	return fix(id);
+	//return fix(id, address(this));
     }
 }
 
